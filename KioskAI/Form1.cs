@@ -4,8 +4,12 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Drawing.Printing;
 using System.IO;
+using System.Windows.Forms;
 using Ghostscript.NET.Rasterizer;
+using NTwain;
+using NTwain.Data;
 using QRCoder;
+using WIA;
 using ZXing;
 using ZXing.Common;
 using ZXing.QrCode;
@@ -24,15 +28,13 @@ namespace KioskAI
         private int lineSpacing = 120;
         private int currentMenuIndex = 0;  // 페이지 간 진행 상태 추적
 
-        private string[] menus = new[] { "햄버거 세트", "피자 세트", "감자튀김 세트" };
+        private string[] menus = new[] { "햄버거 세트", "피자 세트", "감자튀김 세트", "콜라" };
         // PrintDialog 생성
         PrintDialog printDialog;
         public Form1()
         {
             InitializeComponent();
-
         }
-
         private void button1_Click(object sender, EventArgs e)
         {
             printDoc.PrintPage += printDocument1_PrintPage;
@@ -59,22 +61,40 @@ namespace KioskAI
 
                 int lineY = startY + printedCount * lineSpacing;
 
+
+                int digitCount = 3; // 수기 숫자 칸 개수
+
                 // [1] 수기 숫자 칸
+                List<int> boxXs = new List<int>();
+                for(int i = 0; i < digitCount; i++)
+                {
+                    if (i == 0)
+                        boxXs = new List<int> { startX };
+                    else
+                        boxXs.Add(boxXs[i - 1] + boxSize + spacing);
+                }
+                /*
                 int[] boxXs = {
                     startX,
                     startX + boxSize + spacing,
                     startX + (boxSize + spacing) * 2
                 };
+                */
 
-                for (int j = 0; j < 3; j++)
+                for (int j = 0; j < digitCount; j++)
                     e.Graphics.DrawRectangle(gridPen, new Rectangle(boxXs[j], lineY, boxSize, boxSize));
 
                 // [2] 자리수 QR 코드 (수기 숫자 칸 위에 배치)
-                string[] digitLabels = { "100", "10", "1" };  // 왼 → 오 (백, 십, 일)
+                List<string> digitLabels = new List<string>();
+                for(int i = digitCount - 1; i >= 0; i--)
+                {
+                    digitLabels.Add(Convert.ToInt32(Math.Pow(10, i)).ToString()); // 1000, 100, 10, 1
+                }
+                //string[] digitLabels = {"1000", "100", "10", "1" };  // 왼 → 오 (백, 십, 일)
                 float digitQRScale = 1.3f;
                 int digitQRSize = (int)(boxSize * digitQRScale);
 
-                for (int j = 0; j < 3; j++)
+                for (int j = 0; j < digitCount; j++)
                 {
                     string digitData = (currentMenuIndex + 1).ToString() + "-" + digitLabels[j];
                     Bitmap digitQR = GenerateQRCode(digitData);
@@ -96,7 +116,7 @@ namespace KioskAI
                 Bitmap qrImage = GenerateQRCode(qrData);
                 float scaleFactor = 1.3f;
                 int qrRenderSize = (int)(boxSize * scaleFactor);
-                int qrX = boxXs[2] + boxSize + spacing * 2;
+                int qrX = boxXs[digitCount - 1] + boxSize + spacing * 2;
                 int qrYOffset = (qrRenderSize - boxSize) / 2;
                 int qrY = lineY - qrYOffset;
                 e.Graphics.DrawImage(qrImage, new Rectangle(qrX, qrY, qrRenderSize, qrRenderSize));
@@ -370,6 +390,49 @@ namespace KioskAI
                 }
             }
             return result;
+        }
+
+        public static Bitmap ScanWithWia()
+        {
+            const string FORMAT_PNG = "{B96B3CAF-0728-11D3-9D7B-0000F81EF32E}";
+
+            var manager = new DeviceManager();
+
+            DeviceInfo scannerInfo = null;
+            foreach (DeviceInfo info in manager.DeviceInfos)
+            {
+                if (info.Type == WiaDeviceType.ScannerDeviceType &&
+                    info.Properties["Name"].get_Value().ToString().Contains("ES-50"))
+                {
+                    scannerInfo = info;
+                    break;
+                }
+            }
+
+            if (scannerInfo == null)
+                throw new Exception("ES-50 스캐너를 찾을 수 없습니다.");
+
+            var device = scannerInfo.Connect();
+            var item = device.Items[1];
+
+            // 컬러, 해상도 설정
+            SetWiaProperty(item, 6146, 300); // DPI X
+            SetWiaProperty(item, 6147, 300); // DPI Y
+            SetWiaProperty(item, 6149, 1);   // 1 = 컬러, 2=그레이, 4=흑백
+
+            var imgFile = (ImageFile)item.Transfer(FORMAT_PNG);
+            var data = (byte[])imgFile.FileData.get_BinaryData();
+
+            using (var ms = new MemoryStream(data))
+            {
+                return new Bitmap(ms);
+            }
+        }
+
+        private static void SetWiaProperty(Item item, object propId, object value)
+        {
+            var prop = item.Properties.get_Item(ref propId);
+            prop.set_Value(ref value);
         }
     }
 }
