@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36203.30
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KioskAI", "KioskAI\KioskAI.csproj", "{6B02A625-AFA1-4D7B-83EE-C73D44AB0092}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6B02A625-AFA1-4D7B-83EE-C73D44AB0092}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B02A625-AFA1-4D7B-83EE-C73D44AB0092}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B02A625-AFA1-4D7B-83EE-C73D44AB0092}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B02A625-AFA1-4D7B-83EE-C73D44AB0092}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {915C0B44-B5E1-4CD2-9EB8-EE98B46D513E}
+	EndGlobalSection
+EndGlobal
